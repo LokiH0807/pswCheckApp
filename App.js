@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, View, TextInput, TouchableOpacity } from 'react-native';
 
@@ -10,14 +10,42 @@ export default function App() {
     setPsw(password)
   }
 
+  // check number 隨機生成四位數
+  const randomGenerate =(min, max) => { // 四位數生成函式
+    const num = Math.floor(Math.random() * (max - min)) + min
+    const newNum = Math.floor(Math.random() * (max - min)) + min
+    if (String(num).length === 4) return num // 避免出現少於四位數，暫時無解法
+    else return newNum
+  }
+  const [checkNum, setCheckNm] = useState(randomGenerate(0,9999))
+
+
+  // 倒數計時
+  let [countdown, setCountdown] = useState(30)
+  let intervalRef = useRef()
+  const decreaseCountdown = () => setCountdown((prev) => prev - 1)
+
+  useEffect(() => {
+    intervalRef.current = setInterval(decreaseCountdown, 1000)
+    return () => clearInterval(intervalRef.current);
+  }, []);
+  
+  if (countdown < 0) {
+    setCountdown(30)
+    setCheckNm(randomGenerate(0,9999))
+  }
+
+
   // 確認 input 內有文字
   const [ pswExist, setPswExist ] = useState(false)
 
   // btn checked status
   const [ checkStatus, setCheckStatus ] = useState(false)
+  
   const btnChecked = () => {
     if (psw) setPswExist(true)
-    if (psw === '123456') setCheckStatus(true)
+    if (Number(psw) === checkNum) setCheckStatus(true)
+
     // 1.5秒後重置
     setTimeout(() => {
       setPswExist(false)
@@ -28,21 +56,23 @@ export default function App() {
 
   return (
     <View style={styles.container}>
-      <Text style={{ color: '#fff', fontSize: 20, marginBottom: 20, fontWeight: 'bold' }}>密碼確認 APP</Text>
+      <Text style={{ color: 'grey' }}>{ countdown }s</Text>
+      <Text style={{ color: '#fff', fontSize: 30, marginBottom: 50, fontWeight: 'bold' }}>{ checkNum }</Text>
       <TextInput 
         placeholder='請輸入密碼'
         style={ styles.textInput}r
         onChangeText={(val) => changePsw(val)}
         value={psw}
-        maxLength={6}
+        maxLength={4}
+        secureTextEntry={true}
       ></TextInput>
 
       {/* render： check result text */}
       { !pswExist
           ? <Text style={{ color: '#fff', marginTop: 10, fontSize: 20 }}></Text>
-          :  checkStatus
-            ? <Text style={{ color: 'red', marginTop: 10, fontSize: 20 }}>密碼正確</Text> 
-            : <Text style={{ color: '#fff', marginTop: 10, fontSize: 20 }}>密碼錯誤</Text> }
+          : checkStatus
+            ? <Text style={{ color: 'green', marginTop: 10, fontSize: 20 }}>密碼正確</Text> 
+            : <Text style={{ color: 'red', marginTop: 10, fontSize: 20 }}>密碼錯誤</Text> }
 
       <TouchableOpacity
         style={ styles.button }
